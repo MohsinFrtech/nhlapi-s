@@ -8,7 +8,7 @@ NHL API proxy with in-memory caching (cache time depends on the endpoint, see be
 3. `node --env-file=.env server.js`
 
 ## Deploy (Vercel)
-1. Push the repo to GitHub and import it as a project at vercel.com. `vercel.json` routes every path to `api/index.js`.
+1. Push the repo to GitHub and import it as a project at vercel.com. Vercel detects the Express app in `app.js` (default export) with no extra config.
 2. Add environment variables `NHL_API_URL`, `NHL_API_HOST` and `NHL_API_TOKEN` (same values as `.env.example`).
 3. Deploy. Every response carries `Cache-Control: public, s-maxage=<time left on the cache entry, max 1h>` so Vercel's CDN serves repeat requests without running the function.
 

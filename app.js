@@ -1,10 +1,10 @@
 const express = require("express");
-const {cached} = require("../lib/cached");
-const {fetchSchedule, fetchTeams, fetchRoster, fetchNews, fetchStandings, fetchTeamSchedule, fetchTeamStats, fetchPlayerStats, fetchInjuries, fetchTeamInfo} = require("../lib/nhlClient");
-const {parseDate, todayEastern, assertDateInRange, ageOn} = require("../lib/date");
-const {scheduleTtlMs, untilAfterNextGameMs} = require("../lib/scheduleTtl");
-const {currentSeason, parseSeason, availableSeasons, seasonName} = require("../lib/season");
-const {HttpError} = require("../lib/errors");
+const {cached} = require("./lib/cached");
+const {fetchSchedule, fetchTeams, fetchRoster, fetchNews, fetchStandings, fetchTeamSchedule, fetchTeamStats, fetchPlayerStats, fetchInjuries, fetchTeamInfo} = require("./lib/nhlClient");
+const {parseDate, todayEastern, assertDateInRange, ageOn} = require("./lib/date");
+const {scheduleTtlMs, untilAfterNextGameMs} = require("./lib/scheduleTtl");
+const {currentSeason, parseSeason, availableSeasons, seasonName} = require("./lib/season");
+const {HttpError} = require("./lib/errors");
 
 const app = express();
 app.use(express.json());
