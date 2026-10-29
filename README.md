@@ -12,6 +12,13 @@ NHL API proxy with in-memory caching (cache time depends on the endpoint, see be
 2. Add environment variables `NHL_API_URL`, `NHL_API_HOST` and `NHL_API_TOKEN` (same values as `.env.example`).
 3. Deploy. Every response carries `Cache-Control: public, s-maxage=<time left on the cache entry, max 1h>` so Vercel's CDN serves repeat requests without running the function.
 
+## Caching and the RapidAPI limit
+Responses are cached per endpoint (times below). With Upstash Redis connected (Vercel project, Storage tab, Upstash for Redis, free plan), the cache is shared by all server instances and survives restarts, and two more protections turn on:
+- **Lock:** when an entry expires, one instance fetches it while the others wait, so it costs one upstream call, not one per instance.
+- **Monthly call counter:** every RapidAPI call is counted (`UPSTREAM_MONTHLY_LIMIT`, default 22000 per calendar month). Past the limit no upstream calls are made and cached data is served (`X-Cache: STALE`), or 503 `upstream_budget_exhausted` if nothing is cached.
+
+Redis is optional: without it the app uses per-instance memory only and the limit is not enforced.
+
 ## Endpoints
 - `GET /` health check
 - `GET /api/schedule?date=YYYY-MM-DD` schedule from a date onward, as upstream returns it (defaults to today, US Eastern). Only yesterday to 7 days ahead is accepted (`date_out_of_range` otherwise). Response: `{from, days: [{date, games}]}`.

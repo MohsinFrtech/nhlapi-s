@@ -10,6 +10,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@upstash/redis": "^1.40.0",
     "express": "^5.2.1"
   },
   "private": true
