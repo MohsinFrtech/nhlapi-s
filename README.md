@@ -22,7 +22,7 @@ Redis is optional: without it the app uses per-instance memory only and the limi
 ## Endpoints
 - `GET /` health check
 - `GET /api/schedule?date=YYYY-MM-DD` schedule from a date onward, as upstream returns it (defaults to today, US Eastern). Only yesterday to 7 days ahead is accepted (`date_out_of_range` otherwise). Response: `{from, days: [{date, games}]}`.
-  Cache time follows game state: 10 min while a game is live, until puck drop (max 1h) before games, 30 days once every game is final, 24h for future dates.
+  Cache time follows game state: 2 min while a game is live, until puck drop (max 1h) before games, 30 days once every game is final, 24h for future dates.
   Response header `X-Cache` is `HIT`, `MISS` or `STALE`.
 - `GET /api/teams` all NHL teams (cached 7 days). Response: `{season, teams}`.
 - `GET /api/teams/:id` team profile: colors, logos, standing, record, venue and next game (cached until 6h after the next puck drop, max 24h).
