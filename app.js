@@ -5,10 +5,12 @@ const {parseDate, todayEastern, assertDateInRange, ageOn} = require("./lib/date"
 const {scheduleTtlMs, untilAfterNextGameMs} = require("./lib/scheduleTtl");
 const {currentSeason, parseSeason, availableSeasons, seasonName} = require("./lib/season");
 const {HttpError} = require("./lib/errors");
+const {rateLimit} = require("./lib/rateLimit");
 
 const app = express();
 app.disable("x-powered-by"); // don't advertise the framework in every response
 app.use(express.json());
+app.use("/api", rateLimit); // before any cache or upstream work, so blocked clients cost nothing
 
 const HOUR_MS = 60 * 60 * 1000;
 const SCHEDULE_DAYS_BACK = 1;
