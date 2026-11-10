@@ -6,6 +6,7 @@ const {scheduleTtlMs, untilAfterNextGameMs} = require("./lib/scheduleTtl");
 const {currentSeason, parseSeason, availableSeasons, seasonName} = require("./lib/season");
 const {HttpError} = require("./lib/errors");
 const {rateLimit} = require("./lib/rateLimit");
+const {parsePagination, paginate} = require("./lib/paginate");
 
 const app = express();
 app.disable("x-powered-by"); // don't advertise the framework in every response
@@ -43,6 +44,10 @@ const cacheHeaders = (status, ttlLeftMs) => ({
   "Cache-Control": `public, max-age=0, s-maxage=${status === "STALE" ? STALE_CDN_AGE_S : Math.min(Math.floor(ttlLeftMs / 1000), CDN_MAX_AGE_S)}`,
 });
 
+// Opt-in paging (?page, ?limit). Without them responses are unchanged. Max players lets a client fetch a whole roster in one page.
+const NEWS_PAGING = {defaultLimit: 10, maxLimit: 50};
+const PLAYERS_PAGING = {defaultLimit: 20, maxLimit: 100};
+
 const getTeams = () => cached("teams", TEAMS_TTL_MS, fetchTeams);
 
 app.get("/", (req, res) => {
@@ -78,6 +83,8 @@ app.get("/api/teams", async (req, res, next) => {
 
 app.get("/api/news", async (req, res, next) => {
   try {
+    // Validate before touching the cache so bad requests never cost an upstream call.
+    const pagination = parsePagination(req.query, NEWS_PAGING);
     const {data, status, ttlLeftMs} = await cached("news", NEWS_TTL_MS, async () => {
       // Tag news items with our team ids; news still works if the team list is unavailable.
       let teamsByName = new Map();
@@ -89,7 +96,12 @@ app.get("/api/news", async (req, res, next) => {
       }
       return fetchNews(teamsByName);
     });
-    res.set(cacheHeaders(status, ttlLeftMs)).json(data);
+    if (!pagination) {
+      res.set(cacheHeaders(status, ttlLeftMs)).json(data);
+      return;
+    }
+    const {items, pagination: info} = paginate(data.items, pagination);
+    res.set(cacheHeaders(status, ttlLeftMs)).json({...data, items, pagination: info});
   } catch (err) {
     next(err);
   }
@@ -263,6 +275,8 @@ app.get("/api/teams/:id/players", async (req, res, next) => {
     if (!/^\d{1,10}$/.test(id)) {
       throw new HttpError(400, "invalid_team_id", "team id must be a number");
     }
+    // Validate before touching the cache so bad requests never cost an upstream call.
+    const pagination = parsePagination(req.query, PLAYERS_PAGING);
     // Only real team ids reach the upstream API, so random ids can't burn quota.
     const {data: league} = await getTeams();
     if (!league.teams.some((t) => t.id === id)) {
@@ -275,7 +289,12 @@ app.get("/api/teams/:id/players", async (req, res, next) => {
       const age = ageOn(p.dateOfBirth, today);
       return {...p, age: age === null ? p.age : age};
     });
-    res.set(cacheHeaders(status, ttlLeftMs)).json({...data, players});
+    if (!pagination) {
+      res.set(cacheHeaders(status, ttlLeftMs)).json({...data, players});
+      return;
+    }
+    const {items, pagination: info} = paginate(players, pagination);
+    res.set(cacheHeaders(status, ttlLeftMs)).json({...data, players: items, pagination: info});
   } catch (err) {
     next(err);
   }
